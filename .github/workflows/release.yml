@@ -10,6 +10,8 @@ permissions:
 jobs:
   win:
     runs-on: windows-latest
+    outputs:
+      version: ${{ steps.pkg.outputs.version }}
     steps:
       - uses: actions/checkout@v4
 
@@ -29,29 +31,26 @@ jobs:
         id: pkg
         run: node -e "require('fs').appendFileSync(process.env.GITHUB_OUTPUT,'version='+require('./package.json').version+'\n')"
 
-      - name: List built artifacts (Win)
+      - name: List Windows artifacts
         shell: pwsh
         run: |
-          Write-Host "Listing dist and release directories"
-          if (Test-Path dist) { Get-ChildItem -Recurse -File dist } else { Write-Host "dist not found" }
-          if (Test-Path release) { Get-ChildItem -Recurse -File release } else { Write-Host "release not found" }
+          Write-Host "=== release dir ==="
+          if (Test-Path release) { Get-ChildItem -Recurse -File release } else { Write-Host "no release dir" }
+          Write-Host "=== dist dir ==="
+          if (Test-Path dist) { Get-ChildItem -Recurse -File dist } else { Write-Host "no dist dir" }
 
-      - name: Upload installers to Release (Win)
-        uses: softprops/action-gh-release@v2
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: v${{ steps.pkg.outputs.version }}
-          files: |
-            dist/*Setup*.exe
-            dist/*.exe
-            dist/**/Setup*.exe
-            release/*Setup*.exe
-            release/*.exe
-            release/**/Setup*.exe
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: win-installer
+          path: |
+            release/**/*.exe
+            dist/**/*.exe
+          if-no-files-found: error
 
   mac:
     runs-on: macos-latest
+    needs: [win]
     steps:
       - uses: actions/checkout@v4
 
@@ -67,25 +66,51 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: List macOS artifacts
+        shell: bash
+        run: |
+          echo "=== release dir ==="
+          ls -R release || true
+          echo "=== dist dir ==="
+          ls -R dist || true
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-installer
+          path: |
+            release/**/*.dmg
+            dist/**/*.dmg
+          if-no-files-found: error
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: [win, mac]
+    steps:
+      - uses: actions/checkout@v4
+
       - name: Read version from package.json
         id: pkg
         run: node -e "require('fs').appendFileSync(process.env.GITHUB_OUTPUT,'version='+require('./package.json').version+'\n')"
 
-      - name: List built artifacts (Mac)
-        shell: bash
-        run: |
-          echo "Listing dist and release directories"
-          ls -R dist || true
-          ls -R release || true
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
 
-      - name: Upload installers to Release (Mac)
+      - name: List downloaded artifacts
+        run: |
+          echo "=== artifacts ==="
+          find artifacts -type f -maxdepth 3 -print
+
+      - name: Publish installers to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.pkg.outputs.version }}
+          draft: false
           files: |
-            dist/*.dmg
-            dist/**/*.dmg
-            release/*.dmg
-            release/**/*.dmg
+            artifacts/**/*.exe
+            artifacts/**/*.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
