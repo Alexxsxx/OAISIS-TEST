@@ -27,9 +27,8 @@ jobs:
 
       - name: Read version from package.json
         id: pkg
-        shell: bash
-        run: echo "version=$(node -p -e \"require('./package.json').version\")" >> $GITHUB_OUTPUT
-
+        run: node -e "require('fs').appendFileSync(process.env.GITHUB_OUTPUT, 'version=' + require('./package.json').version + '\n')"
+        
       - name: Upload installers to Draft Release
         uses: softprops/action-gh-release@v2
         with:
@@ -60,8 +59,7 @@ jobs:
 
       - name: Read version from package.json
         id: pkg
-        shell: bash
-        run: echo "version=$(node -p -e \"require('./package.json').version\")" >> $GITHUB_OUTPUT
+        run: node -e "require('fs').appendFileSync(process.env.GITHUB_OUTPUT, 'version=' + require('./package.json').version + '\n')"
 
       - name: Upload installers to Draft Release
         uses: softprops/action-gh-release@v2
