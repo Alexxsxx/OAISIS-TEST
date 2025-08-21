@@ -1,0 +1,28 @@
+appId: com.ottomatic.quote-tool
+productName: Quote Tool
+files:
+  - "dist/**"
+asar: true
+directories:
+  output: "release"
+
+publish:
+  provider: github
+  owner: Alexxsxx
+  repo: OAISIS-TEST
+  releaseType: draft
+
+mac:
+  target: ["dmg"]
+  category: "public.app-category.productivity"
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  artifactName: "QuoteTool-Setup-${version}.exe"
+
+nsis:
+  oneClick: true
+  perMachine: false
+  allowToChangeInstallationDirectory: false
