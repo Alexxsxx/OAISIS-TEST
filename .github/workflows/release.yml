@@ -6,26 +6,69 @@ on:
 
 permissions:
   contents: write
-
 jobs:
   win:
     runs-on: windows-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
-        with: { node-version: 20 }
-      - run: npm install
-      - run: npm run dist:win
+        with:
+          node-version: 20
+
+      - name: Install deps
+        run: npm install
+
+      - name: Build Windows installer
+        run: npm run dist:win
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Read version from package.json
+        id: pkg
+        shell: bash
+        run: echo "version=$(node -p -e \"require('./package.json').version\")" >> $GITHUB_OUTPUT
+
+      - name: Upload installers to Draft Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.pkg.outputs.version }}
+          draft: true
+          files: |
+            release/*.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   mac:
     runs-on: macos-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
-        with: { node-version: 20 }
-      - run: npm install
-      - run: npm run dist:mac
+        with:
+          node-version: 20
+
+      - name: Install deps
+        run: npm install
+
+      - name: Build macOS DMG
+        run: npm run dist:mac
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read version from package.json
+        id: pkg
+        shell: bash
+        run: echo "version=$(node -p -e \"require('./package.json').version\")" >> $GITHUB_OUTPUT
+
+      - name: Upload installers to Draft Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.pkg.outputs.version }}
+          draft: true
+          files: |
+            release/*.dmg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
