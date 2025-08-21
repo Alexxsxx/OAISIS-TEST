@@ -1,0 +1,35 @@
+{
+  "name": "quote-tool",
+  "version": "0.1.0",
+  "description": "Quote Tool desktop app",
+  "main": "dist/electron/main.js",
+  "author": "Ottomatic AI Solutions",
+  "license": "MIT",
+  "scripts": {
+    "dev": "concurrently \"vite --config renderer/vite.config.js\" \"esbuild electron/main.js --platform=node --bundle --outfile=dist/electron/main.js --sourcemap --watch\" \"esbuild electron/preload.js --platform=node --bundle --outfile=dist/electron/preload.js --sourcemap --watch\"",
+    "build:renderer": "vite build --config renderer/vite.config.js",
+    "build:electron": "esbuild electron/main.js --platform=node --bundle --outfile=dist/electron/main.js && esbuild electron/preload.js --platform=node --bundle --outfile=dist/electron/preload.js",
+    "build": "npm run build:renderer && npm run build:electron",
+    "dist:win": "npm run build && electron-builder -w --config electron/builder.yml",
+    "dist:mac": "npm run build && electron-builder -m --config electron/builder.yml"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.19",
+    "concurrently": "^8.2.0",
+    "electron-builder": "^24.13.3",
+    "esbuild": "^0.21.5",
+    "postcss": "^8.4.39",
+    "tailwindcss": "^3.4.7",
+    "vite": "^5.3.4"
+  },
+  "dependencies": {
+    "electron": "^31.3.1",
+    "electron-store": "^8.2.1",
+    "electron-updater": "^6.3.9",
+    "jspdf": "^2.5.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "xlsx": "^0.18.5"
+  }
+}
