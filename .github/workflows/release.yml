@@ -6,10 +6,10 @@ on:
 
 permissions:
   contents: write
+
 jobs:
   win:
     runs-on: windows-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -27,21 +27,31 @@ jobs:
 
       - name: Read version from package.json
         id: pkg
-        run: node -e "require('fs').appendFileSync(process.env.GITHUB_OUTPUT, 'version=' + require('./package.json').version + '\n')"
-        
-      - name: Upload installers to Draft Release
+        run: node -e "require('fs').appendFileSync(process.env.GITHUB_OUTPUT,'version='+require('./package.json').version+'\n')"
+
+      - name: List built artifacts (Win)
+        shell: pwsh
+        run: |
+          Write-Host "Listing dist and release directories"
+          if (Test-Path dist) { Get-ChildItem -Recurse -File dist } else { Write-Host "dist not found" }
+          if (Test-Path release) { Get-ChildItem -Recurse -File release } else { Write-Host "release not found" }
+
+      - name: Upload installers to Release (Win)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.pkg.outputs.version }}
-          draft: true
           files: |
+            dist/*Setup*.exe
+            dist/*.exe
+            dist/**/Setup*.exe
+            release/*Setup*.exe
             release/*.exe
+            release/**/Setup*.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   mac:
     runs-on: macos-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -59,14 +69,23 @@ jobs:
 
       - name: Read version from package.json
         id: pkg
-        run: node -e "require('fs').appendFileSync(process.env.GITHUB_OUTPUT, 'version=' + require('./package.json').version + '\n')"
+        run: node -e "require('fs').appendFileSync(process.env.GITHUB_OUTPUT,'version='+require('./package.json').version+'\n')"
 
-      - name: Upload installers to Draft Release
+      - name: List built artifacts (Mac)
+        shell: bash
+        run: |
+          echo "Listing dist and release directories"
+          ls -R dist || true
+          ls -R release || true
+
+      - name: Upload installers to Release (Mac)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.pkg.outputs.version }}
-          draft: true
           files: |
+            dist/*.dmg
+            dist/**/*.dmg
             release/*.dmg
+            release/**/*.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
