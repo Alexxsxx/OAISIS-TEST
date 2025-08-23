@@ -83,7 +83,7 @@ jobs:
             dist/**/*.dmg
           if-no-files-found: error
 
-  publish:
+publish:
     runs-on: ubuntu-latest
     needs: [win, mac]
     steps:
@@ -99,18 +99,28 @@ jobs:
           path: artifacts
           merge-multiple: true
 
-      - name: List downloaded artifacts
+      - name: Verify installers exist
         run: |
-          echo "=== artifacts ==="
-          find artifacts -type f -maxdepth 3 -print
+          echo "=== artifacts tree ==="
+          find artifacts -type f -print || true
+          COUNT=$(find artifacts -type f \( -name "*.exe" -o -name "*.dmg" \) | wc -l)
+          if [ "$COUNT" -lt 1 ]; then
+            echo "::error::No installers (*.exe/*.dmg) found under 'artifacts/'."
+            exit 1
+          fi
 
       - name: Publish installers to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.pkg.outputs.version }}
+          # publish to the existing tag's release (or create if missing)
           draft: false
+          make_latest: true
           files: |
-            artifacts/**/*.exe
+            artifacts/**            # ← upload everything we downloaded: exe, dmg, yml, blockmap, etc.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
             artifacts/**/*.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
