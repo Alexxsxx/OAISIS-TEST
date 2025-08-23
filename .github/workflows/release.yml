@@ -113,12 +113,13 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.pkg.outputs.version }}
-          # publish to the existing tag's release (or create if missing)
           draft: false
           make_latest: true
           files: |
-            artifacts/**            # ← upload everything we downloaded: exe, dmg, yml, blockmap, etc.
+            artifacts/**/*.exe
+            artifacts/**/*.dmg
+            artifacts/**/*.yml
+            artifacts/**/*.blockmap
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            artifacts/**/*.dmg
