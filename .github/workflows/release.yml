@@ -83,43 +83,34 @@ jobs:
             dist/**/*.dmg
           if-no-files-found: error
 
-  publish:
-    runs-on: ubuntu-latest
-    needs: [win, mac]
-    steps:
-      - uses: actions/checkout@v4
+publish:
+  runs-on: ubuntu-latest
+  needs: [win, mac]
+  steps:
+    - uses: actions/checkout@v4
 
-      - name: Read version from package.json
-        id: pkg
-        run: node -e "require('fs').appendFileSync(process.env.GITHUB_OUTPUT,'version='+require('./package.json').version+'\n')"
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+        merge-multiple: true
 
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-          merge-multiple: true
+    - name: Confirm tag & list artifacts
+      run: |
+        echo "Publishing tag: v${{ needs.win.outputs.version }}"
+        find artifacts -type f -print
 
-      - name: Verify installers exist
-        run: |
-          echo "=== artifacts tree ==="
-          find artifacts -type f -print || true
-          COUNT=$(find artifacts -type f \( -name "*.exe" -o -name "*.dmg" \) | wc -l)
-          if [ "$COUNT" -lt 1 ]; then
-            echo "::error::No installers (*.exe/*.dmg) found under 'artifacts/'."
-            exit 1
-          fi
-
-      - name: Publish installers to GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ steps.pkg.outputs.version }}
-          draft: false
-          make_latest: true
-          files: |
-            artifacts/**/*.exe
-            artifacts/**/*.dmg
-            artifacts/**/*.yml
-            artifacts/**/*.blockmap
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Publish installers to GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v${{ needs.win.outputs.version }}
+        draft: false
+        make_latest: true
+        files: |
+          artifacts/**/*.exe
+          artifacts/**/*.dmg
+          artifacts/**/*.yml
+          artifacts/**/*.blockmap
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
